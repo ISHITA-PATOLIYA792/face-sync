@@ -13,10 +13,11 @@ face_mesh = mp_face_mesh.FaceMesh(min_detection_confidence=0.5, min_tracking_con
 mp_drawing = mp.solutions.drawing_utils
 
 # Initialize variables for eye tracking and motion detection
-EAR_THRESHOLD = 2.0  # EAR threshold for detecting closed eyes
-EYE_AR_CONSEC_FRAMES = 5  # Consecutive frames to consider the eyes closed
+EAR_THRESHOLD = 2.0  # ear threshold for detecting closed eyes
+EYE_AR_CONSEC_FRAMES = 5  # consecutive frames to consider eyes closed
 CLOSE_EYES_TIME_THRESHOLD = 5 * 60  # 5 minutes in seconds
-eyes_were_closed_since = None  # Stores the time when eyes were first closed
+QUICK_SLEEP_THRESHOLD = 60  # 1 minute in seconds
+eyes_were_closed_since = None  # stores time when eyes were first closed
 closed_eyes_counter = 0
 
 # Function to calculate EAR (Eye Aspect Ratio)
@@ -35,7 +36,12 @@ def distance(point1, point2):
 
 # Function to start sleep detection (eyes closed for 5 minutes)
 def start_sleep_detection():
+    print("Starting sleep detection...")
     cap = cv2.VideoCapture(0)
+    if not cap.isOpened():
+        print("Error: Could not open camera")
+        return
+    print("Camera opened successfully")
     global eyes_were_closed_since, closed_eyes_counter
 
     while cap.isOpened():
@@ -74,11 +80,16 @@ def start_sleep_detection():
                 # Check if eyes have been closed for the threshold time
                 if closed_eyes_counter >= EYE_AR_CONSEC_FRAMES and eyes_were_closed_since:
                     elapsed_time = time.time() - eyes_were_closed_since
-                    if elapsed_time >= CLOSE_EYES_TIME_THRESHOLD:
-                        # Play buzzer sound if eyes closed for 5 minutes
+                    if elapsed_time >= QUICK_SLEEP_THRESHOLD and elapsed_time < CLOSE_EYES_TIME_THRESHOLD:
+                        # play buzzer sound if eyes closed for 1 minute
+                        winsound.Beep(2000, 500)  # higher pitch, shorter duration
+                        messagebox.showwarning("Warning", "Eyes closed for 1 minute. Please stay alert!")
+                        eyes_were_closed_since = None  # reset after warning
+                    elif elapsed_time >= CLOSE_EYES_TIME_THRESHOLD:
+                        # play buzzer sound if eyes closed for 5 minutes
                         winsound.Beep(1000, 1000)
                         messagebox.showwarning("Warning", "Eyes closed for 5 minutes. Please be attentive.")
-                        eyes_were_closed_since = None  # Reset after buzzer
+                        eyes_were_closed_since = None  # reset after buzzer
 
         # Show the resulting frame in a window
         cv2.imshow('Face Mesh - Sleep Detection', frame)
@@ -91,7 +102,12 @@ def start_sleep_detection():
 
 # Function to start scrolling control based on face motion (Nose to chin distance)
 def start_scrolling():
+    print("Starting scrolling control...")
     cap = cv2.VideoCapture(0)
+    if not cap.isOpened():
+        print("Error: Could not open camera")
+        return
+    print("Camera opened successfully")
 
     while cap.isOpened():
         ret, frame = cap.read()
@@ -134,14 +150,17 @@ def start_scrolling():
 
 # Function to launch a selected feature in a separate thread
 def start_feature(option):
+    print(f"Starting feature: {option}")
     if option == "sleep":
         thread = Thread(target=start_sleep_detection)
         thread.daemon = True  # Make sure it stops when the app closes
         thread.start()
+        print("Sleep detection thread started")
     elif option == "scroll":
         thread = Thread(target=start_scrolling)
         thread.daemon = True
         thread.start()
+        print("Scrolling thread started")
 
 # GUI Setup with Tkinter
 root = tk.Tk()
