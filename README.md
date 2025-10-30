@@ -1,4 +1,4 @@
-# Mindmotion: Real-Time Face-Based Applications
+# Face-Sync: Real-Time Face-Based Applications
 
 This project provides a real-time application that integrates two features:
 1. **Sleep Detection**: Monitors the user’s eye state (open or closed) to detect drowsiness. If the user has their eyes closed for a specified period (e.g., 5 minutes), an alarm will be triggered.
